@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: smoking-tracker-bot
+    runtime: python
+    env: python-3.12.3
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python smoking_bot.py"
