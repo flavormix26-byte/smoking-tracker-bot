@@ -1,3 +1,4 @@
+# main.py - Versi FINAL, kompatibel python-telegram-bot v20.7
 import os
 import sqlite3
 import logging
@@ -6,10 +7,12 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
+# Database di /tmp agar jalan di Render
 DB_PATH = "/tmp/absensi.db"
 
 def init_db():
@@ -26,7 +29,7 @@ def init_db():
 
 conn = init_db()
 
-async def start_smoking(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     user_id = user.id
     username = user.username or f"user_{user_id}"
@@ -38,12 +41,12 @@ async def start_smoking(update: Update, context: ContextTypes.DEFAULT_TYPE):
     count = c.fetchone()[0]
 
     if count >= 3:
-        await update.message.reply_text("❌ Anda sudah keluar merokok 3x hari ini.")
+        await update.message.reply_text("❌ Maksimal 3x keluar/hari. Tidak bisa lagi.")
         return
 
     c.execute("SELECT 1 FROM sessions WHERE user_id = ? AND end_time IS NULL", (user_id,))
     if c.fetchone():
-        await update.message.reply_text("⚠️ Sesi sebelumnya belum selesai. Kirim /end dulu!")
+        await update.message.reply_text("⚠️ Masih dalam sesi sebelumnya. Kirim /end dulu!")
         return
 
     c.execute("INSERT INTO sessions (user_id, username, start_time) VALUES (?, ?, ?)",
@@ -53,11 +56,10 @@ async def start_smoking(update: Update, context: ContextTypes.DEFAULT_TYPE):
     deadline = now + timedelta(minutes=15)
     await update.message.reply_text(
         f"✅ Keluar #{count+1} jam {now.strftime('%H:%M')}\n"
-        f"⏳ Kembali sebelum {deadline.strftime('%H:%M')}!",
-        parse_mode="Markdown"
+        f"⏳ Kembali sebelum {deadline.strftime('%H:%M')}!"
     )
 
-async def end_smoking(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def end(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     now = datetime.now()
     c = conn.cursor()
@@ -75,16 +77,18 @@ async def end_smoking(update: Update, context: ContextTypes.DEFAULT_TYPE):
               (now.isoformat(), user_id))
     conn.commit()
 
-    if minutes > 15:
-        await update.message.reply_text(f"⚠️ Melebihi batas! ({minutes} menit)")
-    else:
-        await update.message.reply_text(f"✅ Durasi: {minutes} menit")
+    msg = f"⚠️ Melebihi batas! ({minutes} menit)" if minutes > 15 else f"✅ Durasi: {minutes} menit"
+    await update.message.reply_text(msg)
 
 async def riwayat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     today = datetime.now().date().isoformat()
     c = conn.cursor()
-    c.execute("SELECT start_time, end_time FROM sessions WHERE user_id = ? AND date(start_time) = ? ORDER BY start_time", (user_id, today))
+    c.execute("""
+        SELECT start_time, end_time FROM sessions 
+        WHERE user_id = ? AND date(start_time) = ? 
+        ORDER BY start_time
+    """, (user_id, today))
     rows = c.fetchall()
 
     if not rows:
@@ -94,26 +98,4 @@ async def riwayat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "📋 Riwayat hari ini:\n"
     for i, (start, end) in enumerate(rows, 1):
         s = datetime.fromisoformat(start).strftime('%H:%M')
-        if end:
-            e = datetime.fromisoformat(end).strftime('%H:%M')
-            dur = int((datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds() // 60)
-            text += f"{i}. {s}–{e} ({dur} mnt)\n"
-        else:
-            text += f"{i}. {s}–MASIH DI LUAR! ⚠️\n"
-    await update.message.reply_text(text)
-
-def main():
-    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-    if not TOKEN:
-        logger.error("❌ TELEGRAM_BOT_TOKEN tidak disetel!")
-        return
-
-    app = Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start", start_smoking))
-    app.add_handler(CommandHandler("end", end_smoking))
-    app.add_handler(CommandHandler("riwayat", riwayat))
-    logger.info("🚀 Bot siap jalan...")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+        if
