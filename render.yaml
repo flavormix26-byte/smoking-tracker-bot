@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: smoking-tracker-bot
+    runtime: python
+    envVars:
+      - key: 8508828008:AAGEQk9ntvHGuX7Q_pnDyix6Fztwc1Qgx84
+        sync: false
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
