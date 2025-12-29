@@ -1,4 +1,3 @@
-# main.py - Versi FINAL, kompatibel python-telegram-bot v20.7
 import os
 import sqlite3
 import logging
@@ -98,4 +97,26 @@ async def riwayat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = "📋 Riwayat hari ini:\n"
     for i, (start, end) in enumerate(rows, 1):
         s = datetime.fromisoformat(start).strftime('%H:%M')
-        if
+        if end:
+            e = datetime.fromisoformat(end).strftime('%H:%M')
+            dur = int((datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds() // 60)
+            text += f"{i}. {s}–{e} ({dur} mnt)\n"
+        else:
+            text += f"{i}. {s}–MASIH DI LUAR! ⚠️\n"
+    await update.message.reply_text(text)
+
+def main():
+    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    if not TOKEN:
+        logger.error("❌ TELEGRAM_BOT_TOKEN tidak ditemukan!")
+        return
+
+    app = Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("end", end))
+    app.add_handler(CommandHandler("riwayat", riwayat))
+    logger.info("🚀 Bot siap menerima perintah...")
+    app.run_polling()
+
+if __name__ == "__main__":
+    main()
