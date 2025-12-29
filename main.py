@@ -120,11 +120,11 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("gunakan: /start, /end, atau /riwayat")
 
 def main():
-    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+    TOKEN = os.getenv("8508828008:AAGEQk9ntvHGuX7Q_pnDyix6Fztwc1Qgx84")
     if not TOKEN:
         raise ValueError("Harap setel TELEGRAM_BOT_TOKEN di environment variables.")
 
-    app = Application.builder().token(TOKEN).build()
+    app = Application.builder().token(8508828008:AAGEQk9ntvHGuX7Q_pnDyix6Fztwc1Qgx84).build()
 
     app.add_handler(CommandHandler("start", start_smoking))
     app.add_handler(CommandHandler("end", end_smoking))
